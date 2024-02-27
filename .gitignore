@@ -1,0 +1,8 @@
+*/.vscode
+.vscode
+*/*.o
+*/*.a
+*.o
+*.a
+*.txt
+philo
