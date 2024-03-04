@@ -5,7 +5,7 @@ OBJ_DIR = obj
 SRC_NAME = philo.c
 OBJS = $(addprefix $(OBJ_DIR)/,$(SRC_NAME:%.c=%.o))
 SRC = $(addprefix $(SRC_DIR)/,$(SRC_NAME))
-CFLAGS = -Wall -Wextra -Werror -g3
+CFLAGS = -Wall -Wextra -Werror -g3 -D_REENTRANT
 RM = rm -rf
 
 all: $(NAME)
