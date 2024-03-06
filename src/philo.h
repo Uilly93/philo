@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:07:16 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/04 13:26:25 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/06 13:50:51 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 typedef struct s_philo
 {
 	pthread_mutex_t mutex;
+	int				index;
 	int				forks;
 	int				philo;
 	long			time;
@@ -32,7 +33,9 @@ typedef struct s_philo
 	long			eat_time;
 	long			sleep_time;
 	struct			timeval tv;
-	struct			timeval start, end;
+	struct			timeval start;
+	struct			timeval end;
+	struct			timeval tmp;
 }	t_philo;
 
 #endif

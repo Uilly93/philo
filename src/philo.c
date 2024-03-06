@@ -6,11 +6,13 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/04 16:34:26 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/06 17:15:07 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <stdio.h>
+#include <sys/time.h>
 #include <time.h>
 
 bool overflow(char *s)
@@ -67,7 +69,7 @@ int	ft_atoi(char *s)
 	return (nbr * sign);
 }
 
-long	ft_get_ms(t_philo *philos)
+long	get_end(t_philo *philos)
 {
 	gettimeofday(&philos->end, NULL);
 	long time = (philos->end.tv_sec - philos->start.tv_sec);
@@ -75,65 +77,125 @@ long	ft_get_ms(t_philo *philos)
 	return (micros / 1000);
 }
 
+// long	get_start(t_philo *philos)
+// {
+// 	long	start;
+// 	gettimeofday(&philos->start, NULL);
+// 	return (start);
+// }
+
 int		eat_routine(t_philo *philos)
 {
-	long end;
-	
-	gettimeofday(&philos->start, NULL);
+	long	end;
+	// long	start;
+
+	// start = get_start(philos);
+	// gettimeofday(&philos->start, NULL);
 	usleep(philos->eat_time * 1000);
-	end = ft_get_ms(philos);
+	end = get_end(philos);
 	if (end > philos->die_time)
 	{
 		printf("%ld ms: thread %d died :(\n", end, philos->philo);
 		return (1);
 	}
-	printf("%ldms philo %d eating\n", end, philos->philo);
+	// printf("%ldms philo %d eating\n", end, philos->philo);
 	return (0);
 }
 
 int sleeping_routine(t_philo *philos)
 {
 	long end;
-	
-	gettimeofday(&philos->start, NULL);
+	// long	start;
+
+	// start = get_start(philos);
+	// gettimeofday(&philos->start, NULL);
 	usleep(philos->sleep_time * 1000);
-	end = ft_get_ms(philos);
+	end = get_end(philos);
 	if (end > philos->die_time)
 	{
 		printf("%ld ms: thread %d died :(\n", end, philos->philo);
 		return (1);
 	}
-	printf("%ldms philo %d sleeping\n", end, philos->philo);
+	// printf("%ldms philo %d sleeping\n", end, philos->philo);
 	return (0);
 }
 
 int	thinking_routine(t_philo *philos)
 {
 	long end;
-	
-	gettimeofday(&philos->start, NULL);
+	// long	start;
+
+	// start = get_start(philos);
+	// gettimeofday(&philos->start, NULL);
 	usleep(philos->sleep_time * 1000);
-	end = ft_get_ms(philos);
+	end = get_end(philos);
 	if (end > philos->die_time)
 	{
 		printf("%ld ms: thread %d died :(\n", end, philos->philo);
+		philos->philo--;
 		return (1);
 	}
-	printf("%ldms philo %d sleeping\n", end, philos->philo);
+	// printf("%ldms philo %d sleeping\n", end, philos->philo);
 	return (0);
 }
 
 void	*thread_routine(void *arg)
 {
 	long end;
+	
 	t_philo *philos = (t_philo *)arg;
 	gettimeofday(&philos->start, NULL);
+	end = get_end(philos);
+	printf("%ldms philo %d take a fork\n", end, philos->philo);
 	if(eat_routine(philos))
 		return (NULL);
+	end = get_end(philos);
+	printf("%ldms philo %d eating\n", end, philos->philo);
 	if(sleeping_routine(philos))
 		return (NULL);
+	end = get_end(philos);
+	printf("%ldms philo %d sleeping\n", end, philos->philo);
+	if(end > philos->die_time)
+	{
+		printf("philo %d died, end of simulation\n", philos->philo);
+		return (NULL);
+	}
 	return (NULL);
 }
+
+void *print_thread(void *arg)
+{
+	t_philo *philos = (t_philo *)arg;
+	printf("this is philo %d\n", philos->philo);
+	usleep(200000);
+	return (NULL);
+}
+
+int	create_threads(int nb_thread, t_philo *philos)
+{
+	pthread_t	threads;
+	long		end;
+	
+	philos->philo = 1;
+	while(nb_thread > 0)
+	{
+		gettimeofday(&philos->start, NULL);
+		// printf("start = %ld\n", start);
+		pthread_create(&threads, NULL, print_thread,(void *)philos);
+		philos->philo++;
+		// end = get_end(philos);
+		// printf("end = %ld\n", end);
+		// if(end > philos->die_time)
+		// 	printf("philo %d died, end of simulation\n", philos->philo);
+		// 	return (1);
+		// }
+		end = get_end(philos);
+		nb_thread--;
+	}
+	pthread_join(threads, NULL);
+	return (0);
+}
+
 int	parsing_infos(t_philo *philos, char **av)
 {
 	int	i;
@@ -155,19 +217,6 @@ int	parsing_infos(t_philo *philos, char **av)
 	return (0);
 }
 
-void	routine(int nb_thread, t_philo *philos)
-{
-	pthread_t	threads;
-
-	philos->philo = 0;
-	while(nb_thread > 0)
-	{
-		philos->philo++;
-		pthread_create(&threads, NULL, thread_routine,(void *)philos);
-		pthread_join(threads, NULL);
-		nb_thread--;
-	}
-}
 
 int	main(int ac, char **av)
 {
@@ -184,9 +233,9 @@ int	main(int ac, char **av)
 	{
 		while(1)
 		{
-		philos.philo = atoi(av[1]);
-		printf("Routine:\n");
-		routine(philos.philo, &philos);	
+			printf("Routine:\n");
+			if(routine(philos.philo, &philos))
+				exit(0);
 		}
 	}
 	if(ac == 6)
@@ -196,7 +245,8 @@ int	main(int ac, char **av)
 		{
 			philos.philo = atoi(av[1]);
 			printf("Before thread\n");
-			routine(philos.philo, &philos);	
+			if(routine(philos.philo, &philos))
+				exit(0);	
 			loop--;
 		}
 	}
