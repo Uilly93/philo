@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:07:16 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/06 13:50:51 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/14 13:41:47 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,20 +22,26 @@
 # include <stdbool.h>
 # include <limits.h>
 
+
 typedef struct s_philo
 {
 	pthread_mutex_t mutex;
-	int				index;
-	int				forks;
 	int				philo;
-	long			time;
 	long			die_time;
 	long			eat_time;
 	long			sleep_time;
-	struct			timeval tv;
 	struct			timeval start;
 	struct			timeval end;
-	struct			timeval tmp;
+
+	bool			eaten;
+	bool			slept;
+	int				forks_count;
 }	t_philo;
+
+typedef struct s_index
+{
+	int		i;
+	// struct	t_philo;
+}	t_index;
 
 #endif
