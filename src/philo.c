@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/15 14:18:43 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/18 16:42:39 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -173,6 +173,65 @@ void	init_mutex(t_philo *philos)
 	}
 	return ;
 }
+int	ft_strcmp(char *s1, char *s2)
+{
+	int	i;
+
+	i = 0;
+	while (s1[i] && s2[i] && s1[i] == s2[i])
+		i++;
+	return (s1[i] - s2[i]);
+}
+
+void	change_odd_forks(t_philo *philos, char *s)
+{
+	int i;
+
+	i = 0;
+	if(ft_strcmp(s, "lock") == 0)
+	{
+		while (i < philos->nb)
+		{
+			if(i % 2 != 0)
+				pthread_mutex_lock(philos[i].right_fork);
+			i++;
+		}
+	}
+	else if (ft_strcmp(s, "unlock") == 0)
+	{
+		while (i < philos->nb)
+		{
+			if(i % 2 != 0)
+				pthread_mutex_unlock(philos[i].right_fork);
+			i++;
+		}
+	}
+}
+
+void	change_pair_forks(t_philo *philos, char *s)
+{
+	int i;
+
+	i = 0;
+	if(ft_strcmp(s, "lock") == 0)
+	{
+		while (i < philos->nb)
+		{
+			if(i % 2 == 0)
+				pthread_mutex_lock(philos[i].right_fork);
+			i++;
+		}
+	}
+	else if (ft_strcmp(s, "unlock") == 0)
+	{
+		while (i < philos->nb)
+		{
+			if(i % 2 == 0)
+				pthread_mutex_unlock(philos[i].right_fork);
+			i++;
+		}
+	}
+}
 
 void	*pair_routine(void *args)
 {
@@ -180,24 +239,35 @@ void	*pair_routine(void *args)
 	int	i;
 	
 	philos = (t_philo *)args;
-	i = 1;
-	while(i < philos->nb){
+	i = 0;
+	while (i < philos->nb)
+	{
+		philos[i].forks_count = 1;
 		philos[i].right_fork = malloc(sizeof(pthread_mutex_t));
-		if(i == 0){
-			philos[0].left_fork = philos[philos->nb].right_fork;
-			
-		}
-		philos[i].left_fork = philos[i - 1].right_fork;
 		i++;
 	}
 	i = 0;
-	while(i < philos->nb)
+	while (i < philos->nb)
 	{
+		// change_odd_forks(philos, "lock");
 		if(i % 2 == 0)
+		{
+			if(i == 0)
+				philos[0].left_fork = philos[philos->nb].right_fork;
+			philos[i].left_fork = philos[i - 1].right_fork;
+			printf("philo %d is eating\n", i + 1);
+		}
+		i++;
+	}
+	// change_odd_forks(philos, "unlock");
+	i = 1;
+	while (i <= philos->nb)
+	{
+		if(i % 2 == 0){
 			philos[i].forks_count += 1;
-		else
-			philos[i].forks_count -= 1;
-		printf("philo %d has %d fork\n", i, philos[i].forks_count);
+			printf("philo %d has %d fork\n", i, philos[i].forks_count);
+			philos[i - 1].forks_count -= 1;
+		}
 		i++;
 	}
 	return (NULL);
@@ -209,7 +279,7 @@ void	create(int nb_thread, t_philo *philos, pthread_t *threads)
 	philos->index = 0;
 	// if (nb_thread % 2 == 0)
 	// {
-		while(philos->index < nb_thread)
+		while(philos->index <= nb_thread)
 		{
 			pthread_create(&threads[philos->index], NULL, pair_routine,(void *)philos);
 			philos->index++;
