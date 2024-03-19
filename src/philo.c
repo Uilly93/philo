@@ -6,13 +6,14 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/18 16:42:39 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/19 15:51:10 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 #include <bits/pthreadtypes.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
@@ -98,9 +99,16 @@ int		eat_routine(t_philo *philos)
 {
 	// if(philos->forks_count == 2)
 	// {
-		usleep(philos->eat_time * 1000);
+		int i;
+
+		i = 1;
 		// printf("%ld ms: ", get_end(philos));
-		printf("philo %d eating\n", philos->index);
+		usleep(philos->eat_time * 1000);
+		while(i <= philos->nb)
+		{
+			// printf("%ld ms: ", get_end(philos));
+			printf("%ld ms: philo %d eating\n", get_end(philos), i++);
+		}
 		return (0);
 	// }
 	// return (1);
@@ -108,9 +116,16 @@ int		eat_routine(t_philo *philos)
 
 int sleeping_routine(t_philo *philos)
 {
+	int i;
+
+	i = 1;
+		// printf("%ld ms: ", get_end(philos));
 	usleep(philos->sleep_time * 1000);
-	// printf("%ld ms: ", get_end(philos));
-	printf("philo %d sleeping\n", philos->index);
+	while(i <= philos->nb)
+	{
+		printf("%ld ms: ", get_end(philos));
+		printf("philo %d sleeping\n", i++);
+	}
 	// printf("%ldms philo %d sleeping\n", end, philos->philo);
 	return (0);
 }
@@ -123,22 +138,22 @@ int	thinking_routine(t_philo *philos)
 	return (0);
 }
 
-void	*thread_routine(void *arg)
+void	thread_routine(t_philo *philos)
 {
-	t_philo *philos = (t_philo *)arg;
+	// t_philo *philos = (t_philo *)arg;
 	// pthread_mutex_lock(&philos->mutex);
 	// gettimeofday(&philos->start, NULL);
 	// end = get_end(philos);
 	// printf("%ld ms: ", get_end(philos));
-	printf("%ld ms: philo %d take a fork\n", get_end(philos), philos->index);
+	// printf("%ld ms: philo %d take a fork\n", get_end(philos), philos->index);
 	// pthread_mutex_unlock(&philos->mutex);
 	if(eat_routine(philos))
-		return (NULL);
-	printf("%ld ms: ", get_end(philos));
+		return ;
+	// printf("%ld ms: ", get_end(philos));
 	if(sleeping_routine(philos))
-		return (NULL);
-	printf("%ld ms: ", get_end(philos));
-	return (NULL);
+		return ;
+	// printf("%ld ms: ", get_end(philos));
+	return ;
 }
 
 // void *print_thread(void *arg)
@@ -160,18 +175,42 @@ void	join_threads(int nb_thread, t_philo *philos, pthread_t *threads)
 	}
 }
 
-void	init_mutex(t_philo *philos)
+void	free_mutex(t_philo *philos)
+{
+	int i;
+
+	i = 0;
+	while(i < philos->nb)
+	{
+		if(philos[i].right_fork)
+			free(philos[i].right_fork);
+		i++;
+	}
+	return ;
+}
+
+int	init_mutex(t_philo *philos)
 {
 	int i;
 	
 	i = 0;
-	pthread_mutex_init(philos[i].right_fork, NULL);
 	while(i < philos->nb)
 	{
 		philos[i].right_fork = malloc(sizeof(pthread_mutex_t));
+		if(!philos[i].right_fork)
+		{
+			free_mutex(philos);
+			return (1);
+		}
 		i++;
 	}
-	return ;
+	i = 0;
+	while(i < philos->nb)
+	{
+		pthread_mutex_init(philos[i].right_fork, NULL);
+		i++;
+	}
+	return (0);
 }
 int	ft_strcmp(char *s1, char *s2)
 {
@@ -233,6 +272,21 @@ void	change_pair_forks(t_philo *philos, char *s)
 	}
 }
 
+// bool	check_forks(t_philo *philos)
+// {
+// 	int i;
+
+// 	i = 0;
+// 	while(i < philos->nb)
+// 	{
+// 		if(philos[i].forks_count == 2)
+// 		{
+// 			printf("philos %d is eating", i + 1);
+// 			philos[i].eaten = true;
+// 		}
+// 	}
+// }
+
 void	*pair_routine(void *args)
 {
 	t_philo *philos;
@@ -240,38 +294,29 @@ void	*pair_routine(void *args)
 	
 	philos = (t_philo *)args;
 	i = 0;
+	philos->forks_count = 1;
+	philos->eaten = false;
+	philos->slept = false;
+	if(init_mutex(philos))
+		return (NULL);
 	while (i < philos->nb)
 	{
-		philos[i].forks_count = 1;
-		philos[i].right_fork = malloc(sizeof(pthread_mutex_t));
-		i++;
-	}
-	i = 0;
-	while (i < philos->nb)
-	{
-		// change_odd_forks(philos, "lock");
 		if(i % 2 == 0)
 		{
 			if(i == 0)
 				philos[0].left_fork = philos[philos->nb].right_fork;
 			philos[i].left_fork = philos[i - 1].right_fork;
-			printf("philo %d is eating\n", i + 1);
+			// printf("%ld ms: ", get_end(philos));
+			printf("%ld ms: philo %d take a fork\n", get_end(philos), i + 1);
+			i++;
 		}
-		i++;
+		else
+			i++;
 	}
-	// change_odd_forks(philos, "unlock");
-	i = 1;
-	while (i <= philos->nb)
-	{
-		if(i % 2 == 0){
-			philos[i].forks_count += 1;
-			printf("philo %d has %d fork\n", i, philos[i].forks_count);
-			philos[i - 1].forks_count -= 1;
-		}
-		i++;
-	}
+	change_odd_forks(philos, "lock");
+	thread_routine(philos);
+	change_odd_forks(philos, "unlock");
 	return (NULL);
-	//pair -> odd(w/out last) -> last
 }
 
 void	create(int nb_thread, t_philo *philos, pthread_t *threads)
@@ -326,6 +371,8 @@ int	main(int ac, char **av)
 		return (0);
 	if(parsing_infos(&philos, av))
 		return (1);
+	// if(init_mutex(&philos))
+	// 	return (1);
 	// pthread_mutex_init(&philos.mutex, NULL);
 	// pthread_t threads[philos.philo];
 	
