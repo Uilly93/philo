@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:07:16 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/21 15:12:04 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/21 16:51:10 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 # include <stdbool.h>
 # include <limits.h>
 
-typedef struct s_simu
+typedef struct s_infos
 {
 	int				nb;
 	long			die_time;
@@ -31,14 +31,14 @@ typedef struct s_simu
 	struct			timeval start;
 	struct			timeval end;
 	int				loop;
-}	t_simu;
+}	t_infos;
 
 typedef struct s_philo
 {
 	pthread_mutex_t *right_fork;
 	pthread_mutex_t	*left_fork;
 	int				index;
-	t_simu			*infos;
+	t_infos			*infos;
 	bool			eaten;
 	bool			slept;
 	int				forks_count;

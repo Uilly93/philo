@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/21 16:32:36 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/03/21 16:51:59 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,26 +76,12 @@ int	ft_atoi(char *s)
 long	get_end(t_philo *philos)
 {
 	gettimeofday(&philos->infos->end, NULL);
-	// long time = (philos->end.tv_sec - philos->start.tv_sec);
-	// long micros = ((time * 1000000) + philos->end.tv_usec) - (philos->start.tv_usec);
-	// return (micros / 1000);
 	long start = ((philos->infos->start.tv_sec * 1000000)
 	+ philos->infos->start.tv_usec) / 1000;
 	long end = ((philos->infos->end.tv_sec * 1000000)
 	+ philos->infos->end.tv_usec) / 1000;
 	return (end - start);
 }
-// void	print_end(t_philo *philos)
-// {
-// 	printf("%ld ms", get_end(philos));
-// }
-
-// long	get_start(t_philo *philos)
-// {
-// 	long	start;
-// 	gettimeofday(&philos->start, NULL);
-// 	return (start);
-// }
 
 int		eat_routine(t_philo *philos)
 {
@@ -327,15 +313,11 @@ int	create_threads(int nb_thread, t_philo *philos)
 	return (0);
 }
 
-int	parsing_infos(t_philo *philos, t_simu *infos, char **av)
+int	parsing_infos(t_philo *philos, t_infos *infos, char **av)
 {
 	int	i;
-	(void)philos;
 
 	i = 0;
-	// philos = malloc(sizeof(t_philo *)* ft_atoi(av[1]));
-	// philos->infos = malloc(sizeof(t_simu));
-	// printf("%d\n", ft_atoi(av[5]));
 	while(av[i])
 	{
 		if(overflow(av[i]))
@@ -375,7 +357,7 @@ int	parsing_infos(t_philo *philos, t_simu *infos, char **av)
 int	main(int ac, char **av)
 {
 	t_philo philos;
-	t_simu	infos;
+	t_infos	infos;
 	// pthread_t	threads[ft_atoi(av[1])];
 	// philos = NULL;
 	// t_philo *philos = malloc(sizeof(t_philo *)* ft_atoi(av[1]));
@@ -408,7 +390,7 @@ int	main(int ac, char **av)
 		create_threads(infos.nb, &philos);
 		while(infos.loop > 0)
 		{
-			// join_threads(infos.nb, threads);
+			// join_threads(infos.nb, NULL);
 			// printf("Before thread\n");
 			// if(get_end(&philos) > philos.die_time)
 			// {
