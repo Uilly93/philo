@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/28 16:49:14 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/08 18:52:02 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,9 +141,9 @@ void	give_forks(t_philo *philo)
 	while(i < philo->infos->nb)
 	{
 		if(i == 0)
-			philo[i].left_fork = philo[philo->infos->nb - 1].right_fork;
+			philo[i].l_fork = philo[philo->infos->nb - 1].r_fork;
 		else
-			philo[i].left_fork = philo[i - 1].right_fork;
+			philo[i].l_fork = philo[i - 1].r_fork;
 		i++;
 	}
 }
@@ -157,13 +157,13 @@ int	init_mutex(t_philo *philo)
 	i = 0;
 	while(i < philo->infos->nb)
 	{
-		philo[i].right_fork = malloc(sizeof(pthread_mutex_t));
-		if(!philo[i].right_fork)
+		philo[i].r_fork = malloc(sizeof(pthread_mutex_t));
+		if(!philo[i].r_fork)
 		{
 			free_mutexs(philo);
 			return (1);
 		}
-		pthread_mutex_init(philo[i].right_fork, NULL);
+		pthread_mutex_init(philo[i].r_fork, NULL);
 		i++;
 	}
 	give_forks(philo);
@@ -191,7 +191,7 @@ void	change_odd_forks(t_philo *philo, char *s)
 		while (i < philo->infos->nb)
 		{
 			if(i % 2 != 0)
-				pthread_mutex_lock(philo[i].right_fork);
+				pthread_mutex_lock(philo[i].r_fork);
 			i++;
 		}
 	}
@@ -200,65 +200,52 @@ void	change_odd_forks(t_philo *philo, char *s)
 		while (i < philo->infos->nb)
 		{
 			if(i % 2 != 0)
-				pthread_mutex_unlock(philo[i].right_fork);
+				pthread_mutex_unlock(philo[i].r_fork);
 			i++;
 		}
 	}
 }
 
-void	change_pair_forks(t_philo *philo, char *s)
-{
-	int i;
 
-	i = 0;
-	if(ft_strcmp(s, "lock") == 0)
-	{
-		while (i < philo->infos->nb)
-		{
-			if(i % 2 == 0)
-				pthread_mutex_lock(philo[i].right_fork);
-			i++;
-		}
-	}
-	else if (ft_strcmp(s, "unlock") == 0)
-	{
-		while (i < philo->infos->nb)
-		{
-			if(i % 2 == 0)
-				pthread_mutex_unlock(philo[i].right_fork);
-			i++;
-		}
-	}
+int	lock_forks(t_philo *philo)
+{
+	if(philo->index == 0)
+		pthread_mutex_lock(philo->infos->philos[philo->infos->nb -1].r_fork); // need test
+	else
+		pthread_mutex_lock(philo->infos->philos[philo->index -1].r_fork);
+	return (1);
 }
 
-void	take_fork(t_philo *philo, char *state)
+int	unlock_forks(t_philo *philo)
 {
-	if(ft_strcmp(state, "lock") == 0)
-	{
-		if(philo->index == 0)
-		{
-			// printf("philo %d takes philo's %d fork at %p\n", philo->index, philo->infos->nb, philo[philo->infos->nb - 1].right_fork); // test
-			pthread_mutex_lock(philo[philo->infos->nb - 1].right_fork); // need test
-		}
-		else
-		{
-			// printf("philo %d takes philo's %d fork\n", philo->index, philo->index - 1); // test
-			pthread_mutex_lock(philo[philo->index - 1].right_fork);
-		}
-	}
-	else if(ft_strcmp(state, "unlock"))
-		{
-		if(philo->index == 0)
-		{
-			// printf("philo %d takes philo's %d fork\n", philo->index, philo->infos->nb - 1); // test
-			pthread_mutex_unlock(philo[philo->infos->nb].right_fork);
-		}
-		else
-		{
-			// printf("philo %d takes philo's %d fork\n", philo->index, philo->index - 1); // test
-			pthread_mutex_unlock(philo[philo->index - 1].right_fork);
-		}
-	}
+	if(philo->index == 0)
+		pthread_mutex_unlock(philo->infos->philos[philo->infos->nb -1].r_fork); // need test
+	else
+		pthread_mutex_unlock(philo->infos->philos[philo->index -1].r_fork);
+	return (1);
+}
+
+void	print_func(t_philo *philo)
+{
+	lock_forks(philo);
+	// pthread_mutex_lock(&philo->infos->print);
+	// printf("philo %d fork count = %d\n", philo->index, philo->forks_count);
+	// printf("philo %d fork count = %d\n", philo->index, philo->forks_count);
+	printf("philo %d is eating\n", philo->index + 1);
+	usleep(200000);
+	// philo->forks_count = 2;
+	// pthread_mutex_lock(philo->r_fork);
+	// pthread_mutex_lock(philo->l_fork);
+	// printf("ret = %d, ret2 = %d\n", ret, ret2);
+	
+	// if(philo->index == 0)
+	// 	printf("philo %d takes philo's %d fork at %p\n", philo->index,
+	// 	philo->infos->nb - 1, philo->infos->philos[philo->infos->nb - 1].r_fork); // test
+	// else
+	// 	printf("philo %d takes philo's %d fork at %p\n", philo->index,
+	// 	philo->index - 1, philo->infos->philos[philo->index - 1].r_fork); // test
+	// pthread_mutex_unlock(&philo->infos->print);
+	unlock_forks(philo);
 }
 
 void	*pair_routine(void *args)
@@ -270,7 +257,12 @@ void	*pair_routine(void *args)
 	// if(philo->index % 2 != 0)
 	// {
 		// take_fork(philo, "lock");
-		printf("philo %d:\n", philo->index + 1);
+		// take_fork(philo, "lock");
+		// pthread_mutex_lock(&philo->infos->print);
+		print_func(philo);
+		// usleep(200000);
+		// pthread_mutex_unlock(&philo->infos->print);
+		// take_fork(philo, "unlock");
 		// take_fork(philo, "unlock");
 	// }
 	return (NULL);
@@ -279,15 +271,13 @@ void	*pair_routine(void *args)
 void	create(int nb_thread, t_philo *philo)
 {
 	int i = 0;
-	// if (nb_thread % 2 == 0)
-	// {
+
 		while(i < nb_thread)
 		{
 			pthread_create(&philo[i].threads, NULL, pair_routine,(void *)&philo[i]);
 			i++;
 		}
 		return ;
-	// }
 }
 
 int	create_threads(int nb_thread, t_philo *philo)
@@ -307,7 +297,6 @@ int check_overflow(t_infos *infos, char **av)
 		if(overflow(av[i]))
 		{
 			write(2, "Error\n", 6);
-			// free(philo);
 			return (1);
 		}
 		i++;
@@ -322,30 +311,29 @@ int check_overflow(t_infos *infos, char **av)
 int	parsing_infos(t_philo **philo, t_infos *infos, char **av)
 {
 	int	i;
-	pthread_mutex_t right_fork;
+	pthread_mutex_t print;
 
 	i = 0;
 	if (check_overflow(infos, av))
 		return(1);
 	infos->nb = ft_atoi(av[1]);
 	*philo = malloc(sizeof(t_philo)* infos->nb);
-	// printf("%d philo = %p\n", __LINE__, *philo);
 	infos->die_time = ft_atoi(av[2]);
 	infos->eat_time = ft_atoi(av[3]);
 	infos->sleep_time = ft_atoi(av[4]);
-	// printf("%d philo = %p\n", __LINE__, *philo);
+	infos->philos = *philo;
+	pthread_mutex_init(&infos->print, NULL);
 	while (i < infos->nb)
 	{
 		(*philo)[i].forks_count = 1;
 		(*philo)[i].infos = infos;
 		(*philo)[i].index = i;
-		(*philo)[i].right_fork = &right_fork;
+		(*philo)[i].print = &print;
 		i++;
 	}
+	
 	if(init_mutex(*philo))
 		return (1);
-	// printf("%d fork = %p\n", __LINE__, (*philo)->right_fork);
-	// printf("%d philo = %p\n", __LINE__, *philo);
 	return (0);
 }
 
@@ -356,8 +344,8 @@ void	free_mutexs(t_philo *philo)
 	i = 0;
 	while(i < philo->infos->nb)
 	{
-		if(philo[i].right_fork)
-			free(philo[i].right_fork);
+		if(philo[i].r_fork)
+			free(philo[i].r_fork);
 		i++;
 	}
 	free(philo);
@@ -373,12 +361,7 @@ int	main(int ac, char **av)
 		return (0);
 	if(parsing_infos(&philo, &infos, av))
 		return (1);
-	// printf("%d philo = %p\n", __LINE__, philo);
-	// printf("%d fork = %p\n", __LINE__, philo->right_fork);
-	// printf("Number of philoophers = %d\n", infos.nb);
-	// printf("time to die %s  = ⏱️  %ldms\n", "\U0001FAE5", infos.die_time);
-	// printf("time to eat %s = ⏱️  %ldms\n", "\U0001F60B", infos.eat_time);
-	// printf("time to sleep %s = ⏱️  %ldms\n","\U0001F62A", infos.sleep_time);
+
 	if(ac == 5)
 	{
 		gettimeofday(&infos.start, NULL);
@@ -396,8 +379,14 @@ int	main(int ac, char **av)
 	}
 	free_mutexs(philo);
 	return (0);
+}
 	// impaire philo time to die = time to eat *2 + time to sleep + 10ms pour ne pas mourir
 	// paires philo time to die = time to eat + time to sleep + 10ms pour ne pas mourir
 	// Exemples 5 ttd = 610ms tte = 200ms tts = 200ms 
 	// printf("threads are supposed to have spoken\n");
-}
+	// printf("%d philo = %p\n", __LINE__, philo);
+	// printf("%d fork = %p\n", __LINE__, philo->r_fork);
+	// printf("Number of philoophers = %d\n", infos.nb);
+	// printf("time to die %s  = ⏱️  %ldms\n", "\U0001FAE5", infos.die_time);
+	// printf("time to eat %s = ⏱️  %ldms\n", "\U0001F60B", infos.eat_time);
+	// printf("time to sleep %s = ⏱️  %ldms\n","\U0001F62A", infos.sleep_time);

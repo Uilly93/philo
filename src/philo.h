@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:07:16 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/03/28 14:06:16 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/08 15:04:00 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 # include <stdbool.h>
 # include <limits.h>
 
+typedef struct s_philo	t_philo;
+
 typedef struct s_infos
 {
 	int				nb;
@@ -31,13 +33,17 @@ typedef struct s_infos
 	struct			timeval start;
 	struct			timeval end;
 	int				loop;
+	pthread_mutex_t	print;
+
+	t_philo			*philos;
 }	t_infos;
 
 typedef struct s_philo
 {
 	pthread_t		threads;
-	pthread_mutex_t *right_fork;
-	pthread_mutex_t	*left_fork;
+	pthread_mutex_t *r_fork;
+	pthread_mutex_t	*l_fork;
+	pthread_mutex_t	*print;
 	int				index;
 	t_infos			*infos;
 	bool			eaten;
