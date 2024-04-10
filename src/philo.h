@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:07:16 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/08 15:04:00 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/10 17:49:28 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ typedef struct s_infos
 	int				loop;
 	pthread_mutex_t	print;
 
-	t_philo			*philos;
+	// t_philo			*philos;
 }	t_infos;
 
 typedef struct s_philo

@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/08 18:52:02 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/10 18:31:19 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,7 +103,6 @@ int sleeping_routine(t_philo *philo)
 		printf("%ld ms: philo %d sleeping\n", get_end(philo), philo->index + 1);
 		philo[philo->index].slept = true;
 	}
-	philo->index++;
 	return (0);
 }
 
@@ -127,10 +126,9 @@ void	join_threads(int nb_thread, t_philo *philo)
 {
 	int		i;
 	
-	i = 0;
-	// philo->index = 0;
-	while(i < nb_thread)
-		pthread_join(philo[i++].threads, NULL);
+		i = 0;
+		while(i < nb_thread)
+			pthread_join(philo[i++].threads, NULL);		
 }
 
 void	give_forks(t_philo *philo)
@@ -171,107 +169,67 @@ int	init_mutex(t_philo *philo)
 }
 
 
-int	ft_strcmp(char *s1, char *s2)
-{
-	int	i;
 
-	i = 0;
-	while (s1[i] && s2[i] && s1[i] == s2[i])
-		i++;
-	return (s1[i] - s2[i]);
-}
 
-void	change_odd_forks(t_philo *philo, char *s)
-{
-	int i;
-
-	i = 0;
-	if(ft_strcmp(s, "lock") == 0)
-	{
-		while (i < philo->infos->nb)
-		{
-			if(i % 2 != 0)
-				pthread_mutex_lock(philo[i].r_fork);
-			i++;
-		}
-	}
-	else if (ft_strcmp(s, "unlock") == 0)
-	{
-		while (i < philo->infos->nb)
-		{
-			if(i % 2 != 0)
-				pthread_mutex_unlock(philo[i].r_fork);
-			i++;
-		}
-	}
-}
+// void	debug(t_philo *philo)
+// {
+// 	if (philo->index == 0)
+// 		printf("philo %d is eating with %d philo's fork at %p adress\n", philo->index + 1, philo->infos->nb, philo->infos->philos[philo->infos->nb - 1].r_fork);
+// 	else
+// 		printf("philo %d is eating with %d philo's fork at %p adress\n", philo->index + 1, philo->index,philo->infos->philos[philo->index -1].r_fork);
+// }
 
 
 int	lock_forks(t_philo *philo)
 {
-	if(philo->index == 0)
-		pthread_mutex_lock(philo->infos->philos[philo->infos->nb -1].r_fork); // need test
-	else
-		pthread_mutex_lock(philo->infos->philos[philo->index -1].r_fork);
+	// if(philo->index == 0)
+	// 	pthread_mutex_lock(philo->infos->philos[philo->infos->nb - 1].r_fork); // need test
+	// else
+	pthread_mutex_lock(philo->r_fork);
+	pthread_mutex_lock(philo->l_fork);
 	return (1);
 }
 
 int	unlock_forks(t_philo *philo)
 {
-	if(philo->index == 0)
-		pthread_mutex_unlock(philo->infos->philos[philo->infos->nb -1].r_fork); // need test
-	else
-		pthread_mutex_unlock(philo->infos->philos[philo->index -1].r_fork);
+	// if(philo->index == 0)
+	// 	pthread_mutex_unlock(philo->infos->philos[philo->infos->nb - 1].r_fork); // need test
+	// else
+	pthread_mutex_unlock(philo->r_fork);
+	pthread_mutex_unlock(philo->l_fork);
 	return (1);
 }
-
-void	print_func(t_philo *philo)
-{
-	lock_forks(philo);
-	// pthread_mutex_lock(&philo->infos->print);
-	// printf("philo %d fork count = %d\n", philo->index, philo->forks_count);
-	// printf("philo %d fork count = %d\n", philo->index, philo->forks_count);
-	printf("philo %d is eating\n", philo->index + 1);
-	usleep(200000);
-	// philo->forks_count = 2;
-	// pthread_mutex_lock(philo->r_fork);
-	// pthread_mutex_lock(philo->l_fork);
-	// printf("ret = %d, ret2 = %d\n", ret, ret2);
-	
-	// if(philo->index == 0)
-	// 	printf("philo %d takes philo's %d fork at %p\n", philo->index,
-	// 	philo->infos->nb - 1, philo->infos->philos[philo->infos->nb - 1].r_fork); // test
-	// else
-	// 	printf("philo %d takes philo's %d fork at %p\n", philo->index,
-	// 	philo->index - 1, philo->infos->philos[philo->index - 1].r_fork); // test
-	// pthread_mutex_unlock(&philo->infos->print);
-	unlock_forks(philo);
-}
-
 void	*pair_routine(void *args)
 {
 	t_philo *philo;
 	
 	philo = (t_philo *)args;
-	// if(philo->forks_count == 2)
-	// if(philo->index % 2 != 0)
-	// {
-		// take_fork(philo, "lock");
-		// take_fork(philo, "lock");
-		// pthread_mutex_lock(&philo->infos->print);
-		print_func(philo);
-		// usleep(200000);
-		// pthread_mutex_unlock(&philo->infos->print);
-		// take_fork(philo, "unlock");
-		// take_fork(philo, "unlock");
-	// }
+	if (philo->index % 2 != 0) {
+		usleep(philo->infos->eat_time * 1000);
+	}
+	while (1)
+	{
+		lock_forks(philo);
+		pthread_mutex_lock(&philo->infos->print);
+		printf("%ld %d is eating\n",get_end(philo), philo->index +1);
+		pthread_mutex_unlock(&philo->infos->print);
+		usleep(philo->infos->eat_time * 1000);
+		unlock_forks(philo);
+		pthread_mutex_lock(&philo->infos->print);
+		printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
+		pthread_mutex_unlock(&philo->infos->print);
+		usleep(philo->infos->sleep_time * 1000);
+		pthread_mutex_lock(&philo->infos->print);
+		printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
+		pthread_mutex_unlock(&philo->infos->print);
+	}
 	return (NULL);
 }
+
 
 void	create(int nb_thread, t_philo *philo)
 {
 	int i = 0;
-
 		while(i < nb_thread)
 		{
 			pthread_create(&philo[i].threads, NULL, pair_routine,(void *)&philo[i]);
@@ -283,7 +241,7 @@ void	create(int nb_thread, t_philo *philo)
 int	create_threads(int nb_thread, t_philo *philo)
 {
 	create(nb_thread, philo);
-	join_threads(nb_thread, philo);
+	// join_threads(nb_thread, philo);
 	return (0);
 }
 
@@ -321,7 +279,7 @@ int	parsing_infos(t_philo **philo, t_infos *infos, char **av)
 	infos->die_time = ft_atoi(av[2]);
 	infos->eat_time = ft_atoi(av[3]);
 	infos->sleep_time = ft_atoi(av[4]);
-	infos->philos = *philo;
+	// infos->philos = *philo;
 	pthread_mutex_init(&infos->print, NULL);
 	while (i < infos->nb)
 	{
@@ -365,18 +323,21 @@ int	main(int ac, char **av)
 	if(ac == 5)
 	{
 		gettimeofday(&infos.start, NULL);
-		create_threads(infos.nb, philo);
-		while(1)
-		{
-		}
+		create(infos.nb, philo);
+		// join_threads(infos.nb, philo);
+		// while(1)
+		// {
+		// }
 	}
 	if(ac == 6)
 	{
 		gettimeofday(&infos.start, NULL);
-		create_threads(infos.nb, philo);
-		for(int i = 10; i > 0; i--)
-		{}
+		create(infos.nb, philo);
+		// for(int i = 10; i > 0; i--)
+		// {}
+		// join_threads(infos.nb, philo);
 	}
+	join_threads(infos.nb, philo);
 	free_mutexs(philo);
 	return (0);
 }
