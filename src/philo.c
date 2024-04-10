@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/10 20:40:08 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/10 21:57:26 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,45 +83,6 @@ long	get_end(t_philo *philo)
 	return (end - start);
 }
 
-int		eat_routine(t_philo *philo)
-{
-		if(philo[philo->index].eaten == false)
-		{
-			usleep(philo->infos->eat_time * 1000);
-			printf("%ld ms: philo %d eating\n", get_end(philo), philo->index + 1);
-			philo[philo->index].eaten = true;
-		}
-		philo->index++;
-		return (0);
-}
-
-int sleeping_routine(t_philo *philo)
-{
-	if(philo[philo->index].slept == false)
-	{
-		usleep(philo->infos->sleep_time * 1000);
-		printf("%ld ms: philo %d sleeping\n", get_end(philo), philo->index + 1);
-		philo[philo->index].slept = true;
-	}
-	return (0);
-}
-
-int	thinking_routine(t_philo *philo)
-{
-	printf("philo %d thinking\n", philo->index);
-	// printf("%ldms philo %d sleeping\n", end, philo->philo);
-	return (0);
-}
-
-void	thread_routine(t_philo *philo)
-{
-	if(eat_routine(philo))
-		return ;
-	if(sleeping_routine(philo))
-		return ;
-	return ;
-}
-
 void	join_threads(int nb_thread, t_philo *philo)
 {
 	int		i;
@@ -182,9 +143,6 @@ int	init_mutex(t_philo *philo)
 
 int	lock_forks(t_philo *philo)
 {
-	// if(philo->index == 0)
-	// 	pthread_mutex_lock(philo->infos->philos[philo->infos->nb - 1].r_fork); // need test
-	// else
 	pthread_mutex_lock(philo->r_fork);
 	pthread_mutex_lock(philo->l_fork);
 	return (1);
@@ -192,13 +150,32 @@ int	lock_forks(t_philo *philo)
 
 int	unlock_forks(t_philo *philo)
 {
-	// if(philo->index == 0)
-	// 	pthread_mutex_unlock(philo->infos->philos[philo->infos->nb - 1].r_fork); // need test
-	// else
 	pthread_mutex_unlock(philo->r_fork);
 	pthread_mutex_unlock(philo->l_fork);
 	return (1);
 }
+
+void	eat_routine(t_philo *philo)
+{
+	lock_forks(philo);
+	pthread_mutex_lock(&philo->infos->print);
+	printf("%ld %d is eating\n",get_end(philo), philo->index +1);
+	pthread_mutex_unlock(&philo->infos->print);
+	usleep(philo->infos->eat_time * 1000);
+	unlock_forks(philo);
+}
+
+void	think_sleep(t_philo *philo)
+{
+	pthread_mutex_lock(&philo->infos->print);
+	printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
+	pthread_mutex_unlock(&philo->infos->print);
+	usleep(philo->infos->sleep_time * 1000);
+	pthread_mutex_lock(&philo->infos->print);
+	printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
+	pthread_mutex_unlock(&philo->infos->print);
+}
+
 void	*pair_routine(void *args)
 {
 	t_philo *philo;
@@ -210,19 +187,8 @@ void	*pair_routine(void *args)
 		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
 	while (1)
 	{
-		lock_forks(philo);
-		pthread_mutex_lock(&philo->infos->print);
-		printf("%ld %d is eating\n",get_end(philo), philo->index +1);
-		pthread_mutex_unlock(&philo->infos->print);
-		usleep(philo->infos->eat_time * 1000);
-		unlock_forks(philo);
-		pthread_mutex_lock(&philo->infos->print);
-		printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
-		pthread_mutex_unlock(&philo->infos->print);
-		usleep(philo->infos->sleep_time * 1000);
-		pthread_mutex_lock(&philo->infos->print);
-		printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
-		pthread_mutex_unlock(&philo->infos->print);
+		eat_routine(philo);
+		think_sleep(philo);
 	}
 	return (NULL);
 }
