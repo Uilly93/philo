@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/10 18:31:19 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/10 20:40:08 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,9 +204,10 @@ void	*pair_routine(void *args)
 	t_philo *philo;
 	
 	philo = (t_philo *)args;
-	if (philo->index % 2 != 0) {
+	if (philo->index % 2 != 0)
 		usleep(philo->infos->eat_time * 1000);
-	}
+	if (philo->infos->nb % 2 != 0 && philo->index == philo->infos->nb - 1)
+		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
 	while (1)
 	{
 		lock_forks(philo);
