@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/11 19:16:42 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/14 11:58:14 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,21 +136,55 @@ void	lock_forks(t_philo *philo)
 {
 	pthread_mutex_lock(philo->r_fork);
 	pthread_mutex_lock(philo->l_fork);
-	return ;
 }
 
 void	unlock_forks(t_philo *philo)
 {
 	pthread_mutex_unlock(philo->r_fork);
 	pthread_mutex_unlock(philo->l_fork);
-	return ;
 }
 
 
+int	check_loop_eat(t_philo *philo)
+{
+	int i;
+	int	count;
+
+	count = 0;
+	i = 0;
+	while(i < philo->infos->nb)
+	{
+		if(philo[i].eat_count == philo->infos->nb_loop)
+			count++;
+		i++;
+	}
+	if (count == philo->infos->nb)
+	{
+		pthread_mutex_lock(&philo->infos->print);
+		printf("All philosophers ate %d times, end of the simulation\n",
+		philo->infos->nb_loop);
+		pthread_mutex_unlock(&philo->infos->print);
+		return (1);
+	}
+	return (0);
+}
+
+int	check_all_philos(t_philo *philo)
+{
+	int i;
+
+	i = 0;
+	while(i < philo->infos->nb)
+	{
+		if(philo->infos->dead || philo->infos->finished)
+			return(1);
+		i++;
+	}
+	return (0);
+}
+
 void	eat_think_sleep(t_philo *philo)
 {
-	if(philo->infos->dead)
-		return ;
 	lock_forks(philo);
 	pthread_mutex_lock(&philo->infos->print);
 	printf("%ld %d is eating\n",get_end(philo), philo->index +1);
@@ -168,9 +202,6 @@ void	eat_think_sleep(t_philo *philo)
 	pthread_mutex_unlock(&philo->infos->print);
 }
 
-// void	think_sleep(t_philo *philo)
-// {
-// }
 
 void	*routine(void *args)
 {
@@ -184,24 +215,16 @@ void	*routine(void *args)
 	if(philo->infos->loop)
 	{
 		while (philo->eat_count < philo->infos->nb_loop)
-		{
-			if(philo->infos->dead)
-				return (NULL);
 			eat_think_sleep(philo);
-		}
 		return (NULL);	
 	}
 	while (1)
-	{
-		if(philo->infos->dead)
-			return (NULL);
 		eat_think_sleep(philo);
-	}
 	return (NULL);
 }
 
 
-int	check_death(t_philo *philo) // fix
+int	check_death(t_philo *philo)
 {
 	long	eat_limit;
 	int		i;
@@ -212,10 +235,10 @@ int	check_death(t_philo *philo) // fix
 		while(i < philo->infos->nb)
 		{
 			eat_limit = get_end(philo) - philo[i].last_meal;
-			// printf("%ld\n",eat_limit); // FIX CALCULATION
-			if(eat_limit > philo->infos->die_time)
+			if(check_loop_eat(philo))
+				return(1);
+			if(eat_limit > philo->infos->die_time || check_all_philos(philo))
 			{
-				philo->infos->dead = true;
 				pthread_mutex_lock(&philo->infos->print);
 				printf("%ld philo %d died\n", get_end(philo), i + 1);
 				pthread_mutex_unlock(&philo->infos->print);
@@ -331,10 +354,10 @@ int	main(int ac, char **av)
 		return (0);
 	if(parsing_infos(&philo, &infos, av))
 		return (1);
-	// printf("loop : %d", infos.loop);
 	gettimeofday(&infos.start, NULL);
 	create(infos.nb, philo);
-	if(check_death(philo) || infos.finished)
+	check_death(philo);
+	if(check_all_philos(philo))
 	{
 		join_threads(infos.nb, philo);
 		free_mutexs(philo);
@@ -342,13 +365,3 @@ int	main(int ac, char **av)
 	}
 	return (0);
 }
-	// impaire philo time to die = time to eat *2 + time to sleep + 10ms pour ne pas mourir
-	// paires philo time to die = time to eat + time to sleep + 10ms pour ne pas mourir
-	// Exemples 5 ttd = 610ms tte = 200ms tts = 200ms 
-	// printf("threads are supposed to have spoken\n");
-	// printf("%d philo = %p\n", __LINE__, philo);
-	// printf("%d fork = %p\n", __LINE__, philo->r_fork);
-	// printf("Number of philoophers = %d\n", infos.nb);
-	// printf("time to die %s  = ⏱️  %ldms\n", "\U0001FAE5", infos.die_time);
-	// printf("time to eat %s = ⏱️  %ldms\n", "\U0001F60B", infos.eat_time);
-	// printf("time to sleep %s = ⏱️  %ldms\n","\U0001F62A", infos.sleep_time);
