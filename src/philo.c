@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/14 11:58:14 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/14 14:00:32 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,14 +169,14 @@ int	check_loop_eat(t_philo *philo)
 	return (0);
 }
 
-int	check_all_philos(t_philo *philo)
+int	check_dead(t_philo *philo)
 {
 	int i;
 
 	i = 0;
 	while(i < philo->infos->nb)
 	{
-		if(philo->infos->dead || philo->infos->finished)
+		if(philo[i].infos->dead)
 			return(1);
 		i++;
 	}
@@ -202,6 +202,37 @@ void	eat_think_sleep(t_philo *philo)
 	pthread_mutex_unlock(&philo->infos->print);
 }
 
+void	set_as_finished(t_philo *philo)
+{
+	int i;
+	
+	i = 0;
+	while (i < philo->infos->nb)
+		philo[i++].infos->finished = true;
+}
+
+int	set_as_dead(t_philo *philo)
+{
+	int		i;
+	long	eat_limit;
+
+	i = 0;
+	eat_limit = 0;
+	while(i < philo->infos->nb)
+	{
+		eat_limit = get_end(philo) - philo[i].last_meal;
+		if(eat_limit > philo->infos->die_time || check_dead(philo))
+		{
+			philo[i].infos->dead = true;
+			pthread_mutex_lock(&philo->infos->print);
+			printf("%ld philo %d died\n", get_end(philo), i + 1);
+			pthread_mutex_unlock(&philo->infos->print);
+			return (1);
+		}
+		i++;
+	}
+	return (0);
+}
 
 void	*routine(void *args)
 {
@@ -214,38 +245,30 @@ void	*routine(void *args)
 		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
 	if(philo->infos->loop)
 	{
+		if(philo->infos->dead)
+			set_as_finished(philo);
 		while (philo->eat_count < philo->infos->nb_loop)
 			eat_think_sleep(philo);
 		return (NULL);	
 	}
 	while (1)
+	{
+		if(philo->infos->dead)
+			return (NULL);
 		eat_think_sleep(philo);
+	}
 	return (NULL);
 }
 
 
-int	check_death(t_philo *philo)
+int	check_end(t_philo *philo)
 {
-	long	eat_limit;
-	int		i;
-
 	while (1)
 	{
-		i = 0;
-		while(i < philo->infos->nb)
-		{
-			eat_limit = get_end(philo) - philo[i].last_meal;
-			if(check_loop_eat(philo))
-				return(1);
-			if(eat_limit > philo->infos->die_time || check_all_philos(philo))
-			{
-				pthread_mutex_lock(&philo->infos->print);
-				printf("%ld philo %d died\n", get_end(philo), i + 1);
-				pthread_mutex_unlock(&philo->infos->print);
-				return (1);
-			}
-			i++;
-		}
+		if(check_loop_eat(philo))
+			return(1);
+		if(set_as_dead(philo))
+			return (1);
 		usleep(1000);
 	}
 	return (0);
@@ -356,12 +379,8 @@ int	main(int ac, char **av)
 		return (1);
 	gettimeofday(&infos.start, NULL);
 	create(infos.nb, philo);
-	check_death(philo);
-	if(check_all_philos(philo))
-	{
-		join_threads(infos.nb, philo);
-		free_mutexs(philo);
-		return (1);
-	}
+	check_end(philo); // fix les erreurs de join 
+	join_threads(infos.nb, philo);
+	free_mutexs(philo);
 	return (0);
 }
