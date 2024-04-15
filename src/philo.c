@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/15 16:25:28 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/15 18:57:17 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -238,17 +238,39 @@ int	check_dead(t_philo *philo)
 	return (0);
 }
 
+void	think_sleep(t_philo *philo)
+{
+	pthread_mutex_lock(&philo->infos->mutex);
+	printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
+	pthread_mutex_unlock(&philo->infos->mutex);
+	usleep(philo->infos->sleep_time * 1000);
+	pthread_mutex_lock(&philo->infos->mutex);
+	if(philo->infos->finished) // reduce
+	{
+		pthread_mutex_unlock(&philo->infos->mutex);
+		return ;
+	}
+	printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
+	pthread_mutex_unlock(&philo->infos->mutex);
+}
+
 void	eat_think_sleep(t_philo *philo)
 {
 	lock_forks(philo);
 	pthread_mutex_lock(&philo->infos->mutex);
+	if(philo->infos->finished) // reduce
+	{
+		pthread_mutex_unlock(&philo->infos->mutex);
+		unlock_forks(philo);
+		return ;
+	}
 	printf("%ld %d is eating\n",get_end(philo), philo->index +1);
 	philo->eat_count++;
 	pthread_mutex_unlock(&philo->infos->mutex);
 	usleep(philo->infos->eat_time * 1000);
 	pthread_mutex_lock(&philo->infos->mutex);
 	philo->last_meal = get_end(philo);
-	if(philo->infos->finished)
+	if(philo->infos->finished) // reduce
 	{
 		pthread_mutex_unlock(&philo->infos->mutex);
 		unlock_forks(philo);
@@ -256,13 +278,7 @@ void	eat_think_sleep(t_philo *philo)
 	}
 	pthread_mutex_unlock(&philo->infos->mutex);
 	unlock_forks(philo);
-	pthread_mutex_lock(&philo->infos->mutex);
-	printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
-	pthread_mutex_unlock(&philo->infos->mutex);
-	usleep(philo->infos->sleep_time * 1000);
-	pthread_mutex_lock(&philo->infos->mutex);
-	printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
-	pthread_mutex_unlock(&philo->infos->mutex);
+	think_sleep(philo);
 }
 
 void	set_as_finished(t_philo *philo)
@@ -277,6 +293,19 @@ void	set_as_finished(t_philo *philo)
 		pthread_mutex_unlock(&philo->infos->mutex);
 		i++;
 	}
+}
+
+int	who_died(t_philo *philo)
+{
+	int	i;
+	
+	i = 0;
+	while(i < philo->infos->nb)
+	{
+		if(philo[i].infos->dead)
+			return (i + 1);
+	}
+	return (0);
 }
 
 int	set_as_dead(t_philo *philo)
@@ -294,15 +323,37 @@ int	set_as_dead(t_philo *philo)
 		if(eat_limit > philo->infos->die_time || check_dead(philo))
 		{
 			set_as_finished(philo);
-			join_threads(philo->infos->nb, philo);
 			pthread_mutex_lock(&philo->infos->mutex);
 			philo[i].infos->dead = true;
-			printf("%ld philo %d died\n", get_end(philo), i + 1);
+			printf("%ld philo %d died\n", get_end(philo), who_died(philo));
+			// who_died(philo);
 			pthread_mutex_unlock(&philo->infos->mutex);
+			join_threads(philo->infos->nb, philo);
 			return (1);
 		}
 		i++;
 	}
+	return (0);
+}
+
+int	edge_case(t_philo *philo)
+{
+	pthread_mutex_lock(&philo->infos->mutex);
+	// printf("nb philo = %d\n", philo->infos->nb);
+	if(philo->infos->nb == 1)
+	{
+		pthread_mutex_unlock(&philo->infos->mutex);
+		usleep(philo->infos->dead * 1000);
+		return (1);
+	}
+	pthread_mutex_unlock(&philo->infos->mutex);
+	if (philo->index % 2 != 0)
+		usleep(philo->infos->eat_time * 1000);
+	// pthread_mutex_lock(&philo->infos->mutex);
+	if (philo->infos->nb % 2 != 0 && philo->index == philo->infos->nb - 1)
+	// pthread_mutex_unlock(&philo->infos->mutex);
+		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
+	// pthread_mutex_unlock(&philo->infos->mutex);
 	return (0);
 }
 
@@ -311,16 +362,24 @@ void	*routine(void *args)
 	t_philo *philo;
 	
 	philo = (t_philo *)args;
-	if (philo->index % 2 != 0)
-		usleep(philo->infos->eat_time * 1000);
-	if (philo->infos->nb % 2 != 0 && philo->index == philo->infos->nb - 1)
-		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
+
+	if(edge_case(philo))
+		return(NULL);
 	if(philo->infos->loop)
 	{
 		if(stop_simulation(philo))
 			return (NULL);
-		while (philo->eat_count < philo->infos->nb_loop)
+		while (1)
+		{
+			pthread_mutex_lock(&philo->infos->mutex);
+			if(philo->infos->finished)
+			{
+				pthread_mutex_unlock(&philo->infos->mutex);
+				return (NULL);
+			}
+			pthread_mutex_unlock(&philo->infos->mutex);
 			eat_think_sleep(philo);
+		}
 		return (NULL);	
 	}
 	while (1)
