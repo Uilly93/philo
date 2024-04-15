@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/15 15:41:25 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/15 16:25:28 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,24 +151,48 @@ int	init_mutex(t_philo *philo)
 
 void	lock_forks(t_philo *philo)
 {
-	pthread_mutex_lock(philo->r_fork);
-	pthread_mutex_lock(philo->l_fork);
+	if(philo->r_fork && philo->r_fork)
+	{
+		if(philo->index % 2 == 0)
+		{
+			pthread_mutex_lock(philo->l_fork);
+			pthread_mutex_lock(philo->r_fork);
+		}
+		else
+		{
+			pthread_mutex_lock(philo->r_fork);
+			pthread_mutex_lock(philo->l_fork);
+		}
+	}
 }
 
 void	unlock_forks(t_philo *philo)
 {
-	pthread_mutex_unlock(philo->r_fork);
-	pthread_mutex_unlock(philo->l_fork);
+	if(philo->r_fork && philo->r_fork)
+	{
+		if(philo->index % 2 == 0)
+		{
+			pthread_mutex_unlock(philo->l_fork);
+			pthread_mutex_unlock(philo->r_fork);
+		}
+		else
+		{
+			pthread_mutex_unlock(philo->r_fork);
+			pthread_mutex_unlock(philo->l_fork);
+		}
+	}
 }
 
 int	stop_simulation(t_philo *philo)
 {
-	if(philo->eat_count == philo->infos->nb_loop)
+	pthread_mutex_lock(&philo->infos->mutex);
+	if(philo->eat_count == philo->infos->nb_loop ||
+	philo->infos->dead || philo->infos->finished)
+	{
+		pthread_mutex_unlock(&philo->infos->mutex);
 		return (1);
-	if(philo->infos->dead)
-		return (1);
-	if(philo->infos->finished)
-		return (1);
+	}
+	pthread_mutex_unlock(&philo->infos->mutex);
 	return(0);
 }
 
@@ -269,10 +293,10 @@ int	set_as_dead(t_philo *philo)
 		pthread_mutex_unlock(&philo->infos->mutex);
 		if(eat_limit > philo->infos->die_time || check_dead(philo))
 		{
-			philo[i].infos->dead = true;
 			set_as_finished(philo);
 			join_threads(philo->infos->nb, philo);
 			pthread_mutex_lock(&philo->infos->mutex);
+			philo[i].infos->dead = true;
 			printf("%ld philo %d died\n", get_end(philo), i + 1);
 			pthread_mutex_unlock(&philo->infos->mutex);
 			return (1);
