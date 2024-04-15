@@ -1,53 +1,81 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   test.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/02/28 14:50:19 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/02/29 09:50:36 by wnocchi          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <stdio.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <pthread.h>
+#include "stdbool.h"
+#include "limits.h"
 
-struct timeval start, end;
-// typedef struct s_values
-// {
-// 	long seconds;
-//     long micros;
-//     long millis;
-// }	t_val;
+bool only_digit_string(char *s)
+{
+    int i;
 
-void* start_routine(void *arg) {
-	// t_val *val;
-    // // Simuler un travail en dormant pendant 2 secondes
-	// val->seconds = (end.tv_sec - start.tv_sec);
-    // val->micros = ((val->seconds * 1000000) + end.tv_usec) - (start.tv_usec);
-    // val->millis = val->micros / 1000;
-    gettimeofday(&start, NULL); // Temps de début
-    usleep(300000);
-    gettimeofday(&end, NULL); // Temps de fin
-    return NULL;
+    i = 0;
+    while(s[i])
+    {
+        if(s[i] >= '0' && s[i] <= '9')
+            i++;
+        else
+            return(true);
+    }
+    return(false);
 }
 
-int main() {
-    pthread_t thread;
-	// t_val val;
+int	ft_atoi(char *s)
+{
+	int		i;
+	int		sign;
+	long	nbr;
+	
+	i = 0;
+	sign = 1;
+	nbr = 0;
+	while ((s[i] >= 9 && s[i] <= 13) || s[i] == ' ')
+		i++;
+	if (s[i] == '+' || s[i] == '-')
+	{
+		if(s[i] == '-')
+			sign *= -1;
+		i++;
+	}
+	while(s[i] >= '0' && s[i] <= '9')
+	{
+		nbr = (nbr * 10 + s[i] - '0');
+		i++;
+	}
+	return (nbr * sign);
+}
 
-    // gettimeofday(&start, NULL); // Temps de début
-    pthread_create(&thread, NULL, start_routine, NULL);
-    pthread_join(thread, NULL); // Attendre la fin du thread
+bool overflow(char *s)
+{
+	int		i;
+	int		sign;
+	long	nbr;
+	
+	i = 0;
+	sign = 1;
+	nbr = 0;
+	while ((s[i] >= 9 && s[i] <= 13) || s[i] == ' ' || s[i] == '+')
+		i++;
+	if (s[i] == '-')
+	{
+		sign *= -1;
+		i++;
+	}
+    if(only_digit_string(s + i))
+        return(true);
+	while(s[i] >= '0' && s[i] <= '9')
+	{
+		nbr = (nbr * 10 + s[i++] - '0');
+		if(nbr * sign > INT_MAX || nbr * sign < INT_MIN)
+			return (true);
+	}
+	return (false);
+}
 
-    long seconds = (end.tv_sec - start.tv_sec);
-    long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
-    long millis = micros / 1000; // Convertir en millisecondes
-
-    printf("Temps écoulé : %ld millisecondes\n", millis);
-
-    return 0;
+int main(void)
+{
+    printf("%d\n", overflow("-42"));
+    printf("%d\n", overflow("42"));
+    printf("%d\n", overflow("0"));
+    printf("%d\n", overflow("+214748364 q"));
+    printf("%d\n", overflow("2147483647"));
+    printf("%d\n", overflow("+++   -42"));
+    return(0);
 }

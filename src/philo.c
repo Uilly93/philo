@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/27 10:18:58 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/14 14:00:32 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/15 15:41:25 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,23 @@
 #include <time.h>
 #include <unistd.h>
 
+void	set_as_finished(t_philo *philo);
+
+bool only_digit_string(char *s)
+{
+    int i;
+
+    i = 0;
+    while(s[i])
+    {
+        if(s[i] >= '0' && s[i] <= '9')
+            i++;
+        else
+            return(true);
+    }
+    return(false);
+}
+
 bool overflow(char *s)
 {
 	int		i;
@@ -28,21 +45,20 @@ bool overflow(char *s)
 	i = 0;
 	sign = 1;
 	nbr = 0;
-	while ((s[i] >= 9 && s[i] <= 13) || s[i] == ' ')
+	while ((s[i] >= 9 && s[i] <= 13) || s[i] == ' ' || s[i] == '+')
 		i++;
-	if (s[i] == '+' || s[i] == '-')
+	if (s[i] == '-')
 	{
-		if(s[i] == '-')
-			sign *= -1;
+		sign *= -1;
 		i++;
 	}
+	if (only_digit_string(s + i))
+		return (true);
 	while(s[i] >= '0' && s[i] <= '9')
 	{
-		nbr *= 10;
-		nbr += s[i] - 48;
+		nbr = (nbr * 10 + s[i++] - '0');
 		if(nbr * sign > INT_MAX || nbr * sign < INT_MIN)
 			return (true);
-		i++;
 	}
 	return (false);
 }
@@ -66,8 +82,7 @@ int	ft_atoi(char *s)
 	}
 	while(s[i] >= '0' && s[i] <= '9')
 	{
-		nbr *= 10;
-		nbr += s[i] - 48;
+		nbr = (nbr * 10 + s[i] - '0');
 		i++;
 	}
 	return (nbr * sign);
@@ -119,12 +134,14 @@ int	init_mutex(t_philo *philo)
 	i = 0;
 	while(i < philo->infos->nb)
 	{
+		philo[i].acces = malloc(sizeof(pthread_mutex_t)); ///
 		philo[i].r_fork = malloc(sizeof(pthread_mutex_t));
-		if(!philo[i].r_fork)
+		if(!philo[i].r_fork || !philo[i].acces)
 		{
 			free_mutexs(philo);
 			return (1);
 		}
+		pthread_mutex_init(philo[i].acces, NULL); ///
 		pthread_mutex_init(philo[i].r_fork, NULL);
 		i++;
 	}
@@ -144,6 +161,16 @@ void	unlock_forks(t_philo *philo)
 	pthread_mutex_unlock(philo->l_fork);
 }
 
+int	stop_simulation(t_philo *philo)
+{
+	if(philo->eat_count == philo->infos->nb_loop)
+		return (1);
+	if(philo->infos->dead)
+		return (1);
+	if(philo->infos->finished)
+		return (1);
+	return(0);
+}
 
 int	check_loop_eat(t_philo *philo)
 {
@@ -152,18 +179,22 @@ int	check_loop_eat(t_philo *philo)
 
 	count = 0;
 	i = 0;
-	while(i < philo->infos->nb)
+	while(i < philo->infos->nb) // creer un mutex pour chaque philo et le lock pour y  acceder
 	{
+		pthread_mutex_lock(&philo->infos->mutex);
 		if(philo[i].eat_count == philo->infos->nb_loop)
 			count++;
+		pthread_mutex_unlock(&philo->infos->mutex);
 		i++;
 	}
 	if (count == philo->infos->nb)
 	{
-		pthread_mutex_lock(&philo->infos->print);
+		set_as_finished(philo);
+		join_threads(philo->infos->nb, philo);
+		pthread_mutex_lock(&philo->infos->mutex);
 		printf("All philosophers ate %d times, end of the simulation\n",
 		philo->infos->nb_loop);
-		pthread_mutex_unlock(&philo->infos->print);
+		pthread_mutex_unlock(&philo->infos->mutex);
 		return (1);
 	}
 	return (0);
@@ -186,20 +217,28 @@ int	check_dead(t_philo *philo)
 void	eat_think_sleep(t_philo *philo)
 {
 	lock_forks(philo);
-	pthread_mutex_lock(&philo->infos->print);
+	pthread_mutex_lock(&philo->infos->mutex);
 	printf("%ld %d is eating\n",get_end(philo), philo->index +1);
 	philo->eat_count++;
-	pthread_mutex_unlock(&philo->infos->print);
+	pthread_mutex_unlock(&philo->infos->mutex);
 	usleep(philo->infos->eat_time * 1000);
+	pthread_mutex_lock(&philo->infos->mutex);
 	philo->last_meal = get_end(philo);
+	if(philo->infos->finished)
+	{
+		pthread_mutex_unlock(&philo->infos->mutex);
+		unlock_forks(philo);
+		return ;
+	}
+	pthread_mutex_unlock(&philo->infos->mutex);
 	unlock_forks(philo);
-	pthread_mutex_lock(&philo->infos->print);
+	pthread_mutex_lock(&philo->infos->mutex);
 	printf("%ld %d is sleeping\n",get_end(philo), philo->index +1);
-	pthread_mutex_unlock(&philo->infos->print);
+	pthread_mutex_unlock(&philo->infos->mutex);
 	usleep(philo->infos->sleep_time * 1000);
-	pthread_mutex_lock(&philo->infos->print);
+	pthread_mutex_lock(&philo->infos->mutex);
 	printf("%ld %d is thinking\n",get_end(philo), philo->index +1);
-	pthread_mutex_unlock(&philo->infos->print);
+	pthread_mutex_unlock(&philo->infos->mutex);
 }
 
 void	set_as_finished(t_philo *philo)
@@ -208,7 +247,12 @@ void	set_as_finished(t_philo *philo)
 	
 	i = 0;
 	while (i < philo->infos->nb)
-		philo[i++].infos->finished = true;
+	{
+		pthread_mutex_lock(&philo->infos->mutex);
+		philo[i].infos->finished = true;
+		pthread_mutex_unlock(&philo->infos->mutex);
+		i++;
+	}
 }
 
 int	set_as_dead(t_philo *philo)
@@ -220,13 +264,17 @@ int	set_as_dead(t_philo *philo)
 	eat_limit = 0;
 	while(i < philo->infos->nb)
 	{
+		pthread_mutex_lock(&philo->infos->mutex);
 		eat_limit = get_end(philo) - philo[i].last_meal;
+		pthread_mutex_unlock(&philo->infos->mutex);
 		if(eat_limit > philo->infos->die_time || check_dead(philo))
 		{
 			philo[i].infos->dead = true;
-			pthread_mutex_lock(&philo->infos->print);
+			set_as_finished(philo);
+			join_threads(philo->infos->nb, philo);
+			pthread_mutex_lock(&philo->infos->mutex);
 			printf("%ld philo %d died\n", get_end(philo), i + 1);
-			pthread_mutex_unlock(&philo->infos->print);
+			pthread_mutex_unlock(&philo->infos->mutex);
 			return (1);
 		}
 		i++;
@@ -245,15 +293,15 @@ void	*routine(void *args)
 		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
 	if(philo->infos->loop)
 	{
-		if(philo->infos->dead)
-			set_as_finished(philo);
+		if(stop_simulation(philo))
+			return (NULL);
 		while (philo->eat_count < philo->infos->nb_loop)
 			eat_think_sleep(philo);
 		return (NULL);	
 	}
 	while (1)
 	{
-		if(philo->infos->dead)
+		if(stop_simulation(philo))
 			return (NULL);
 		eat_think_sleep(philo);
 	}
@@ -301,12 +349,12 @@ int check_overflow(t_infos *infos, char **av)
 {
 	int i;
 
-	i = 0;
+	i = 1;
 	while(av[i])
 	{
 		if(overflow(av[i]))
 		{
-			write(2, "Error\nArguments overflow\n", 25);
+			write(2, "Error\nInvalid arguments\n", 24);
 			return (1);
 		}
 		i++;
@@ -339,7 +387,7 @@ int	parsing_infos(t_philo **philo, t_infos *infos, char **av)
 	*philo = malloc(sizeof(t_philo)* infos->nb);
 	if(!*philo)
 		return (1);
-	pthread_mutex_init(&infos->print, NULL);
+	pthread_mutex_init(&infos->mutex, NULL);
 	while (i < infos->nb)
 	{
 		(*philo)[i].infos = infos;
@@ -362,6 +410,8 @@ void	free_mutexs(t_philo *philo)
 	{
 		if(philo[i].r_fork)
 			free(philo[i].r_fork);
+		if(philo[i].acces)
+			free(philo[i].acces);
 		i++;
 	}
 	free(philo);
@@ -380,7 +430,7 @@ int	main(int ac, char **av)
 	gettimeofday(&infos.start, NULL);
 	create(infos.nb, philo);
 	check_end(philo); // fix les erreurs de join 
-	join_threads(infos.nb, philo);
+	// join_threads(infos.nb, philo);
 	free_mutexs(philo);
 	return (0);
 }
