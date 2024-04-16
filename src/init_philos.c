@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:21:15 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:34:47 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/16 15:16:55 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,8 +76,9 @@ void	lock_forks(t_philo *philo)
 			pthread_mutex_lock(philo->l_fork);
 		}
 		pthread_mutex_lock(&philo->infos->mutex);
-		printf("%ld philo %d has taken forks\n", get_end(philo),
-			philo->index + 1);
+		if (!philo->infos->finished)
+			printf("%ld philo %d has taken forks\n", get_end(philo),
+				philo->index + 1);
 		pthread_mutex_unlock(&philo->infos->mutex);
 	}
 }
