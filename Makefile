@@ -2,7 +2,7 @@ NAME = philo
 CC = cc
 SRC_DIR = src
 OBJ_DIR = obj
-SRC_NAME = philo.c
+SRC_NAME = init_philos.c check_data.c parsing_check_errors.c utils.c routine.c main.c
 OBJS = $(addprefix $(OBJ_DIR)/,$(SRC_NAME:%.c=%.o))
 SRC = $(addprefix $(SRC_DIR)/,$(SRC_NAME))
 CFLAGS = -Wall -Wextra -Werror -g3 -D_REENTRANT
