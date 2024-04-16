@@ -6,10 +6,9 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 11:01:50 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:01:53 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/16 11:17:22 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #ifndef PHILO_H
 # define PHILO_H
@@ -31,8 +30,8 @@ typedef struct s_infos
 	long			die_time;
 	long			eat_time;
 	long			sleep_time;
-	struct			timeval start;
-	struct			timeval end;
+	struct timeval	start;
+	struct timeval	end;
 	int				nb_loop;
 	bool			finished;
 	bool			loop;
@@ -43,7 +42,7 @@ typedef struct s_infos
 typedef struct s_philo
 {
 	pthread_t		threads;
-	pthread_mutex_t *r_fork;
+	pthread_mutex_t	*r_fork;
 	pthread_mutex_t	*l_fork;
 	int				index;
 	int				eat_count;

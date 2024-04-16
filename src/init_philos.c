@@ -6,32 +6,35 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:21:15 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 10:28:48 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/16 11:34:47 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <pthread.h>
 
 void	create(int nb_thread, t_philo *philo)
 {
-	int i = 0;
-		while(i < nb_thread)
-		{
-			pthread_create(&philo[i].threads, NULL, routine,(void *)&philo[i]);
-			i++;
-		}
-		return ;
+	int	i;
+
+	i = 0;
+	while (i < nb_thread)
+	{
+		pthread_create(&philo[i].threads, NULL, routine, (void *)&philo[i]);
+		i++;
+	}
+	return ;
 }
 
 int	init_mutex(t_philo *philo)
 {
-	int i;
+	int	i;
 
 	i = 0;
-	while(i < philo->infos->nb)
+	while (i < philo->infos->nb)
 	{
 		philo[i].r_fork = malloc(sizeof(pthread_mutex_t));
-		if(!philo[i].r_fork)
+		if (!philo[i].r_fork)
 		{
 			free_mutexs(philo);
 			return (1);
@@ -45,7 +48,7 @@ int	init_mutex(t_philo *philo)
 
 void	give_forks(t_philo *philo)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	while (i < philo->infos->nb)
@@ -60,9 +63,9 @@ void	give_forks(t_philo *philo)
 
 void	lock_forks(t_philo *philo)
 {
-	if(philo->r_fork && philo->r_fork)
+	if (philo->r_fork && philo->r_fork)
 	{
-		if(philo->index % 2 == 0)
+		if (philo->index % 2 == 0)
 		{
 			pthread_mutex_lock(philo->l_fork);
 			pthread_mutex_lock(philo->r_fork);
@@ -72,14 +75,18 @@ void	lock_forks(t_philo *philo)
 			pthread_mutex_lock(philo->r_fork);
 			pthread_mutex_lock(philo->l_fork);
 		}
+		pthread_mutex_lock(&philo->infos->mutex);
+		printf("%ld philo %d has taken forks\n", get_end(philo),
+			philo->index + 1);
+		pthread_mutex_unlock(&philo->infos->mutex);
 	}
 }
 
 void	unlock_forks(t_philo *philo)
 {
-	if(philo->r_fork && philo->r_fork)
+	if (philo->r_fork && philo->r_fork)
 	{
-		if(philo->index % 2 == 0)
+		if (philo->index % 2 == 0)
 		{
 			pthread_mutex_unlock(philo->l_fork);
 			pthread_mutex_unlock(philo->r_fork);
