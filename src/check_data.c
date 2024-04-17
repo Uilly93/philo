@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:33:05 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:09:51 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/17 11:51:11 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ int	check_loop_eat(t_philo *philo)
 	while (i < philo->infos->nb)
 	{
 		pthread_mutex_lock(&philo->infos->mutex);
-		if (philo[i].eat_count == philo->infos->nb_loop)
+		if (philo[i].eat_count >= philo->infos->nb_loop)
 			count++;
 		pthread_mutex_unlock(&philo->infos->mutex);
 		i++;
@@ -49,7 +49,7 @@ int	check_dead(t_philo *philo)
 	while (i < philo->infos->nb)
 	{
 		if (philo[i].infos->dead)
-			return (1);
+			return (i + 1);
 		i++;
 	}
 	return (0);
@@ -71,19 +71,6 @@ int	check_end(t_philo *philo)
 	return (0);
 }
 
-int	who_died(t_philo *philo)
-{
-	int	i;
-
-	i = 0;
-	while (i < philo->infos->nb)
-	{
-		if (philo[i].infos->dead)
-			return (i + 1);
-	}
-	return (0);
-}
-
 int	set_as_dead(t_philo *philo)
 {
 	int		i;
@@ -96,12 +83,12 @@ int	set_as_dead(t_philo *philo)
 		pthread_mutex_lock(&philo->infos->mutex);
 		eat_limit = get_end(philo) - philo[i].last_meal;
 		pthread_mutex_unlock(&philo->infos->mutex);
-		if (eat_limit > philo->infos->die_time || check_dead(philo))
+		if (eat_limit > philo->infos->die_time + 5)
 		{
 			set_as_finished(philo);
 			pthread_mutex_lock(&philo->infos->mutex);
 			philo[i].infos->dead = true;
-			printf("%ld philo %d died\n", get_end(philo), who_died(philo));
+			printf("%ld philo %d died\n", get_end(philo), check_dead(philo));
 			pthread_mutex_unlock(&philo->infos->mutex);
 			join_threads(philo->infos->nb, philo);
 			return (1);
@@ -109,4 +96,13 @@ int	set_as_dead(t_philo *philo)
 		i++;
 	}
 	return (0);
+}
+
+void	join_threads(int nb_thread, t_philo *philo)
+{
+	int	i;
+
+	i = 0;
+	while (i < nb_thread)
+		pthread_join(philo[i++].threads, NULL);
 }

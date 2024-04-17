@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:35:34 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:20:17 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/17 11:41:23 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,15 +17,13 @@ int	edge_case(t_philo *philo)
 	pthread_mutex_lock(&philo->infos->mutex);
 	if (philo->infos->nb == 1)
 	{
-		pthread_mutex_unlock(&philo->infos->mutex);
 		usleep(philo->infos->dead * 1000);
+		pthread_mutex_unlock(&philo->infos->mutex);
 		return (1);
 	}
 	pthread_mutex_unlock(&philo->infos->mutex);
 	if (philo->index % 2 != 0)
-		usleep(philo->infos->eat_time * 1000);
-	if (philo->infos->nb % 2 != 0 && philo->index == philo->infos->nb - 1)
-		usleep((philo->infos->sleep_time + philo->infos->eat_time) * 1000);
+		usleep(1000);
 	return (0);
 }
 

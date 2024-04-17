@@ -6,20 +6,11 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:41:40 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:12:40 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/17 11:02:56 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
-void	join_threads(int nb_thread, t_philo *philo)
-{
-	int	i;
-
-	i = 0;
-	while (i < nb_thread)
-		pthread_join(philo[i++].threads, NULL);
-}
 
 int	main(int ac, char **av)
 {

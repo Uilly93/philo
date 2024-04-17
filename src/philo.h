@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 11:01:50 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:17:22 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/17 11:40:09 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,12 +63,13 @@ void	set_as_finished(t_philo *philo);
 void	free_mutexs(t_philo *philo);
 
 int		check_loop_eat(t_philo *philo);
-int		check_dead(t_philo *philo);
 int		check_end(t_philo *philo);
-int		who_died(t_philo *philo);
+int		check_dead(t_philo *philo);
 int		set_as_dead(t_philo *philo);
+void	join_threads(int nb_thread, t_philo *philo);
 
 int		edge_case(t_philo *philo);
+void	loop_routine(t_philo *philo);
 void	*routine(void *args);
 void	eat_routine(t_philo *philo);
 void	think_sleep(t_philo *philo);
@@ -78,7 +79,5 @@ int		check_error(t_infos *infos);
 bool	overflow(char *s);
 int		check_overflow(t_infos *infos, char **av);
 int		parsing_infos(t_philo **philo, t_infos *infos, char **av);
-
-void	join_threads(int nb_thread, t_philo *philo);
 
 #endif
