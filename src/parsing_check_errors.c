@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:39:06 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/16 11:15:22 by wnocchi          ###   ########.fr       */
+/*   Updated: 2024/04/19 09:03:31 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ int	check_error(t_infos *infos)
 		return (1);
 	if (infos->sleep_time < 0)
 		return (1);
-	if (infos->nb < 0)
+	if (infos->nb < 1)
 		return (1);
 	return (0);
 }
