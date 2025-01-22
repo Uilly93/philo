@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 11:01:50 by wnocchi           #+#    #+#             */
-/*   Updated: 2025/01/08 16:38:50 by wnocchi          ###   ########.fr       */
+/*   Updated: 2025/01/22 14:22:04 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,5 +79,7 @@ int		check_error(t_infos *infos);
 bool	overflow(char *s);
 int		check_overflow(t_infos *infos, char **av);
 int		parsing_infos(t_philo **philo, t_infos *infos, char **av);
+
+void	ft_usleep(long time, t_philo *philo);
 
 #endif
