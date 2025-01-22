@@ -6,11 +6,19 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:35:34 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/17 11:41:23 by wnocchi          ###   ########.fr       */
+/*   Updated: 2025/01/22 14:02:52 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <unistd.h>
+
+void ft_usleep(long time, t_philo *philo)
+{
+	long actual = get_end(philo);
+	while(get_end(philo) < actual + time)
+		usleep(50);
+}
 
 int	edge_case(t_philo *philo)
 {
@@ -23,7 +31,7 @@ int	edge_case(t_philo *philo)
 	}
 	pthread_mutex_unlock(&philo->infos->mutex);
 	if (philo->index % 2 != 0)
-		usleep(1000);
+		usleep(50);
 	return (0);
 }
 
@@ -75,9 +83,7 @@ void	eat_routine(t_philo *philo)
 	}
 	printf("%ld %d is eating\n", get_end(philo), philo->index +1);
 	philo->eat_count++;
-	pthread_mutex_unlock(&philo->infos->mutex);
-	usleep(philo->infos->eat_time * 1000);
-	pthread_mutex_lock(&philo->infos->mutex);
+	ft_usleep(philo->infos->eat_time, philo);
 	philo->last_meal = get_end(philo);
 	if (philo->infos->finished)
 	{
@@ -94,9 +100,7 @@ void	think_sleep(t_philo *philo)
 {
 	pthread_mutex_lock(&philo->infos->mutex);
 	printf("%ld %d is sleeping\n", get_end(philo), philo->index +1);
-	pthread_mutex_unlock(&philo->infos->mutex);
-	usleep(philo->infos->sleep_time * 1000);
-	pthread_mutex_lock(&philo->infos->mutex);
+	ft_usleep(philo->infos->sleep_time, philo);
 	if (philo->infos->finished)
 	{
 		pthread_mutex_unlock(&philo->infos->mutex);

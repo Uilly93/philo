@@ -6,7 +6,7 @@
 /*   By: wnocchi <wnocchi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/16 10:33:05 by wnocchi           #+#    #+#             */
-/*   Updated: 2024/04/17 11:51:11 by wnocchi          ###   ########.fr       */
+/*   Updated: 2025/01/22 13:50:08 by wnocchi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ int	check_end(t_philo *philo)
 		}
 		if (set_as_dead(philo))
 			return (1);
-		usleep(1000);
+		usleep(50);
 	}
 	return (0);
 }
@@ -83,7 +83,7 @@ int	set_as_dead(t_philo *philo)
 		pthread_mutex_lock(&philo->infos->mutex);
 		eat_limit = get_end(philo) - philo[i].last_meal;
 		pthread_mutex_unlock(&philo->infos->mutex);
-		if (eat_limit > philo->infos->die_time + 5)
+		if (eat_limit > philo->infos->die_time)
 		{
 			set_as_finished(philo);
 			pthread_mutex_lock(&philo->infos->mutex);
